@@ -2,6 +2,6 @@
 
 CODE_DIR=$(dirname "$(readlink -f "$0")")
 
-source $CODE_DIR/.direnv/python-3.8.6/bin/activate
-which python > $CODE_DIR/sylladex.log
-python -u $CODE_DIR/entrypoint.py 2>&1 >> $CODE_DIR/sylladex.log
+source $CODE_DIR/.direnv/python-3.8.6/bin/activate                  #Load the venv
+which python > $CODE_DIR/sylladex.log                               #Record our interpereter path
+python -u $CODE_DIR/entrypoint.py 2>&1 >> $CODE_DIR/sylladex.log    #Start the WM. Log its output.

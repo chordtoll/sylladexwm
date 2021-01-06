@@ -1,2 +1,4 @@
 /.direnv
 *.log
+__pycache__
+_xlib*
