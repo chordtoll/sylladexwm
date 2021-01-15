@@ -103,6 +103,9 @@ MappingNotify       = 34
 GenericEvent        = 35
 LASTEvent           = 36
 
+ClipByChildren      = 0
+IncludeInferiors    = 1
+
 def ConfigureWindow(_xlib, display, window, x=None, y=None, width=None, height=None, border_width=None, sibling=None, stack_mode=None):
     attrMask = 0
     configs = _xlib.ffi.new("XWindowChanges *")
@@ -139,3 +142,28 @@ def ChangeWindowAttributes(_xlib, display, window, border_pixel=None, event_mask
         configs.event_mask = event_mask
         attrMask |= 1<<11
     _xlib.lib.XChangeWindowAttributes(display,window,attrMask,configs)
+
+def GetGeometry(_xlib,display,window):
+    wg_root = _xlib.ffi.new("Window *")
+    wg_x = _xlib.ffi.new("int *")
+    wg_y = _xlib.ffi.new("int *")
+    wg_w = _xlib.ffi.new("unsigned int *")
+    wg_h = _xlib.ffi.new("unsigned int *")
+    wg_bw = _xlib.ffi.new("unsigned int *")
+    wg_depth=_xlib.ffi.new("unsigned int *")
+    _xlib.lib.XGetGeometry(display,window,
+        wg_root,
+        wg_x,
+        wg_y,
+        wg_w,
+        wg_h,
+        wg_bw,
+        wg_depth)
+    return {'root':wg_root[0],'x':wg_x[0],'y':wg_y[0],'w':wg_w[0],'h':wg_h[0],'bw':wg_bw[0],'depth':wg_depth[0]}
+
+def QueryExtension(_xlib,display,name):
+    opcode = _xlib.ffi.new("int *")
+    event = _xlib.ffi.new("int *")
+    error = _xlib.ffi.new("int *")
+    _xlib.lib.XQueryExtension(display, name, opcode,event,error)
+    return {'opcode':opcode[0],'event':event[0],'error':error[0]}

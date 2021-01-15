@@ -8,10 +8,13 @@ ffibuilder.set_source("_xlib",
         #include <X11/Xlib.h>
         #include <X11/Xutil.h>
         #include <X11/XKBlib.h>
+        #include <X11/extensions/Xcomposite.h>
+        #include <X11/extensions/Xrender.h>
+        #include <X11/extensions/Xdamage.h>
 
         #define NONE 0
     """,
-    libraries=['X11'])
+    libraries=['X11','Xcomposite','Xrender','Xdamage'])
 
 Misc_h="""
     #define NONE 0
@@ -19,6 +22,100 @@ Misc_h="""
 
 XKB_h="""
 extern KeySym XkbKeycodeToKeysym(Display *dpy, KeyCode kc, int group, int level);       //356
+"""
+
+XComposite_h="""
+void XCompositeRedirectSubwindows(Display *dpy, Window window, int update);             //76
+Pixmap XCompositeNameWindowPixmap (Display *dpy, Window window);                        //88
+Window XCompositeGetOverlayWindow (Display *dpy, Window window);                        //91
+"""
+
+XRender_h="""
+typedef uint32_t PictFormat;
+typedef XID Picture;
+
+typedef struct {                            //35
+    short   red;
+    short   redMask;
+    short   green;
+    short   greenMask;
+    short   blue;
+    short   blueMask;
+    short   alpha;
+    short   alphaMask;
+} XRenderDirectFormat;
+
+typedef struct {                            //46
+    PictFormat      id;
+    int         type;
+    int         depth;
+    XRenderDirectFormat direct;
+    Colormap        colormap;
+} XRenderPictFormat;
+
+typedef struct _XRenderPictureAttributes {  //67
+    int         repeat;
+    Picture     alpha_map;
+    int         alpha_x_origin;
+    int         alpha_y_origin;
+    int         clip_x_origin;
+    int         clip_y_origin;
+    Pixmap      clip_mask;
+    Bool        graphics_exposures;
+    int         subwindow_mode;
+    int         poly_edge;
+    int         poly_mode;
+    Atom        dither;
+    Bool        component_alpha;
+} XRenderPictureAttributes;
+
+typedef struct {                            //83
+    unsigned short   red;
+    unsigned short   green;
+    unsigned short   blue;
+    unsigned short   alpha;
+} XRenderColor;
+
+XRenderPictFormat * XRenderFindVisualFormat (Display *dpy, const Visual *visual);       //215
+
+XRenderPictFormat * XRenderFindStandardFormat (Display *dpy, int format);               //231
+
+Picture XRenderCreatePicture (Display *dpy, Drawable drawable,                          //240
+              const XRenderPictFormat *format, unsigned long valuemask,
+              const XRenderPictureAttributes  *attributes);
+
+void XRenderComposite (Display *dpy, int op, Picture src, Picture mask,                 //275
+          Picture dst, int src_x, int src_y, int mask_x, int mask_y,
+          int dst_x, int dst_y, unsigned int width, unsigned int height);
+
+void XRenderFillRectangle (Display *dpy, int op, Picture dst,                           //395
+              const XRenderColor *color, int x, int y,
+              unsigned int width, unsigned int height);
+"""
+
+Xdamage_h="""
+typedef XID XserverRegion;
+
+typedef XID Damage;
+
+typedef struct {                                                                        //34
+    int type;           /* event base */
+    unsigned long serial;
+    Bool send_event;
+    Display *display;
+    Drawable drawable;
+    Damage damage;
+    int level;
+    Bool more;          /* more events will be delivered immediately */
+    Time timestamp;
+    XRectangle area;
+    XRectangle geometry;
+} XDamageNotifyEvent;
+
+Damage XDamageCreate (Display *dpy, Drawable drawable, int level);                      //58
+
+void XDamageSubtract (Display *dpy, Damage damage,                                      //64
+              XserverRegion repair, XserverRegion parts);
 """
 
 Xutil_h="""
@@ -221,6 +318,30 @@ typedef struct {
     Cursor cursor;      /* cursor to be displayed (or None) */
 } XSetWindowAttributes;
 
+typedef struct {        //308
+    int x, y;           /* location of window */
+    int width, height;      /* width and height of window */
+    int border_width;       /* border width of window */
+    int depth;              /* depth of window */
+    Visual *visual;     /* the associated visual structure */
+    Window root;            /* root of screen containing window */
+    int class;          /* InputOutput, InputOnly*/
+    int bit_gravity;        /* one of bit gravity values */
+    int win_gravity;        /* one of the window gravity values */
+    int backing_store;      /* NotUseful, WhenMapped, Always */
+    unsigned long backing_planes;/* planes to be preserved if possible */
+    unsigned long backing_pixel;/* value to be used when restoring planes */
+    Bool save_under;        /* boolean, should bits under be saved? */
+    Colormap colormap;      /* color map to be associated with window */
+    Bool map_installed;     /* boolean, is color map currently installed*/
+    int map_state;      /* IsUnmapped, IsUnviewable, IsViewable */
+    long all_event_masks;   /* set of events all people have interest in*/
+    long your_event_mask;   /* my event mask */
+    long do_not_propagate_mask; /* set of events that should not propagate */
+    Bool override_redirect; /* boolean value for override-redirect */
+    Screen *screen;     /* back pointer to correct screen */
+} XWindowAttributes;
+
 /*  396
  * Data structure for XReconfigureWindow
  */
@@ -241,6 +362,30 @@ typedef struct {
     char flags;  /* do_red, do_green, do_blue */
     char pad;
 } XColor;
+
+/*  417
+ * Data structures for graphics operations.  On most machines, these are
+ * congruent with the wire protocol structures, so reformatting the data
+ * can be avoided on these architectures.
+ */
+typedef struct {
+    short x1, y1, x2, y2;
+} XSegment;
+
+typedef struct {
+    short x, y;
+} XPoint;
+
+typedef struct {
+    short x, y;
+    unsigned short width, height;
+} XRectangle;
+
+typedef struct {
+    short x, y;
+    unsigned short width, height;
+    short angle1, angle2;
+} XArc;
 
 /*  481
  * Display datatype maintaining display specific data.
@@ -788,7 +933,9 @@ extern Status XGetGeometry(Display* display,                //2630
     unsigned int* border_width_return,
     unsigned int* depth_return);
 extern int XGetInputFocus(Display* display,                 //2648
-    Window* focus_return, int* revert_to_return);
+    Window* focus_return, int* revert_to_return);           //2701
+extern Status XGetWindowAttributes(Display* display,
+    Window w, XWindowAttributes* window_attributes_return);
 extern int XGrabButton(Display* display,                    //2707
     unsigned int button, unsigned int modifiers,
     Window grab_window, Bool owner_events,
@@ -807,6 +954,11 @@ extern int XMoveWindow(Display* display,                    //2844
 extern int XNextEvent(Display* display,                     //2851
     XEvent* event_return);
 extern int XPending(Display* display);                      //2891
+extern Bool XQueryExtension(Display* display,               //2980
+    const char* name,
+    int* major_opcode_return,
+    int* first_event_return,
+    int* first_error_return);
 extern int XResizeWindow(Display* display,                  //3109
     Window w, unsigned int width, unsigned int height);
 extern int XSetInputFocus(Display* display, Window focus ,  //3261
@@ -817,7 +969,7 @@ extern int XUngrabButton(Display* display,                  //3472
 extern int XUnmapWindow(Display* display, Window w);        //3515
 """
 
-ffibuilder.cdef(Misc_h+X_h+Xlib_h+XKB_h+Xutil_h)
+ffibuilder.cdef(Misc_h+X_h+Xlib_h+XKB_h+Xutil_h+XComposite_h+XRender_h+Xdamage_h)
 
 if __name__ == "__main__":
     ffibuilder.compile(verbose=True)

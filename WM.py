@@ -1,11 +1,13 @@
 import _xlib
 import X.events
+import X.damage
 
 from Keyboard import keyboard
 from Mouse import mouse
 from Mapping import mapping
 from Wallpaper import setWallpaper
 from Focus import focus
+from Compositor import compositor
 
 class wm:
     def __init__(self):
@@ -18,6 +20,9 @@ class wm:
         self.screen = _xlib.lib.XDefaultScreenOfDisplay(self.display)       # Get default screen
         self.rootWindow = _xlib.lib.XRootWindowOfScreen(self.screen)        # Get root window
 
+        self.damage = X.QueryExtension(_xlib,self.display,b"DAMAGE")
+        print(self.damage)
+
         X.ChangeWindowAttributes(_xlib,self.display,self.rootWindow,event_mask=_xlib.lib.SubstructureRedirectMask)  #TODO: remember what this does
 
         #Initialize our various handlers
@@ -25,6 +30,7 @@ class wm:
         self.keyboardHandler = keyboard(self, self.display, self.rootWindow)
         self.mouseHandler = mouse(self)
         self.mappingHandler = mapping(self, self.display, self.rootWindow)
+        self.compositor = compositor(self, self.display, self.rootWindow)
 
         #The most important bit!
         print("Setting Wallpaper")
@@ -60,8 +66,17 @@ class wm:
                 self.mappingHandler.handleMapEvent(event)
             elif event.type == X.events.MapRequest:
                 self.mappingHandler.handleMapEvent(event)
+                self.compositor.mapUpdate(event)
             elif event.type == X.events.UnmapNotify:
                 self.mappingHandler.handleUnmapEvent(event)
+            elif event.type == X.PropertyNotify:
+                self.compositor.propertyUpdate(event)
+            elif event.type == X.Expose:
+                self.compositor.exposeUpdate(event)
+            elif event.type == self.damage['event']+X.damage.DamageNotify:
+                    event = _xlib.ffi.cast("XDamageNotifyEvent *",event)
+                    _xlib.lib.XDamageSubtract(self.display,event.damage,0,0)
+                    self.compositor.damageUpdate(event)
 
     #Main loop
     def loop(self):

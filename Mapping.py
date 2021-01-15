@@ -1,6 +1,7 @@
 import _xlib
 import X
 import X.hints
+import X.damage
 class mapping:
     def __init__(self, wm, display, rootWindow):
         self.wm = wm
@@ -17,6 +18,8 @@ class mapping:
                                  _xlib.lib.PropertyChangeMask |     #Move/resize
                                  _xlib.lib.ExposureMask |           #Exposure change
                                  _xlib.lib.StructureNotifyMask)     #Unmap notification
+
+        _xlib.lib.XDamageCreate(self.display,window,X.damage.DamageReportNonEmpty)
         
         _xlib.lib.XMapWindow(self.display,window)   #Map the window onto the screen
 

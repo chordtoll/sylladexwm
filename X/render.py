@@ -1,0 +1,21 @@
+PictStandardARGB32  = 0
+PictStandardRGB24   = 1
+PictStandardA8      = 2
+PictStandardA4      = 3
+PictStandardA1      = 4
+PictStandardNUM     = 5
+
+CPRepeat            = (1 << 0)
+CPAlphaMap          = (1 << 1)
+CPAlphaXOrigin      = (1 << 2)
+CPAlphaYOrigin      = (1 << 3)
+CPClipXOrigin       = (1 << 4)
+CPClipYOrigin       = (1 << 5)
+CPClipMask          = (1 << 6)
+CPGraphicsExposure  = (1 << 7)
+CPSubwindowMode     = (1 << 8)
+CPPolyEdge          = (1 << 9)
+CPPolyMode          = (1 << 10)
+CPDither            = (1 << 11)
+CPComponentAlpha    = (1 << 12)
+CPLastBit           = 12
